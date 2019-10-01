@@ -1,0 +1,85 @@
+{
+    "mode": "All",
+    "policyRule": {
+        "if": {
+            "anyOf": [
+                {
+                    "field": "type",
+                    "equals": "Microsoft.Storage/storageAccounts/blobServices"
+                },
+                {
+                    "field": "type",
+                    "equals": "Microsoft.Storage/storageAccounts"
+                }
+            ]
+        },
+        "then": {
+            "effect": "deployIfNotExists",
+            "details": {
+                "type": "Microsoft.Storage/storageAccounts/blobServices",
+                "existenceCondition": {
+                    "allOf": [
+                        {
+                            "field": "Microsoft.Storage/storageAccounts/blobServices/deleteRetentionPolicy.enabled",
+                            "equals": "true"
+                        },
+                        {
+                            "field": "Microsoft.Storage/storageAccounts/blobServices/deleteRetentionPolicy.days",
+                            "equals": "[parameters('retentionPeriod')]"
+                        }
+                    ]
+                },
+                "roleDefinitionIds": [
+                    "/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c"
+                ],
+                "deployment": {
+                    "properties": {
+                        "mode": "incremental",
+                        "template": {
+                            "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                            "contentVersion": "1.0.0.0",
+                            "parameters": {
+                                "storageAccountName": {
+                                    "type": "string"
+                                },
+                                "retentionPeriod": {
+                                    "type": "string"
+                                }
+                            },
+                            "resources": [
+                                {
+                                    "name": "[concat(parameters('storageAccountName'), '/default')]",
+                                    "type": "Microsoft.Storage/storageAccounts/blobServices",
+                                    "apiVersion": "2019-04-01",
+                                    "properties": {
+                                        "deleteRetentionPolicy": {
+                                            "enabled": true,
+                                            "days": "[parameters('retentionPeriod')]"
+                                        }
+                                    }
+                                }
+                            ]
+                        },
+                        "parameters": {
+                            "storageAccountName": {
+                                "value": "[field('name')]"
+                            },
+                            "retentionPeriod": {
+                                "value": "[parameters('retentionPeriod')]"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "parameters": {
+        "retentionPeriod": {
+            "type": "String",
+            "metadata": {
+                "displayName": "Retention period in days.",
+                "description": "Retention period indicates the amount of time that soft deleted data is stored and available for recovery. You can retain soft deleted data for between 1 and 365 days"
+            }
+        }
+    }
+}
